@@ -1,20 +1,23 @@
+// Importações de bibliotecas e componentes necessários.
 import React, { useState } from 'react';
 import styled from 'styled-components/native';
 import { ScrollView, ViewStyle, TextStyle } from 'react-native';
 import { Button, ListItem, Text } from 'react-native-elements';
-import { useAuth } from '../contexts/AuthContext';
+import { useAuth } from '../contexts/AuthContext'; // Hook para obter o usuário logado.
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { useFocusEffect } from '@react-navigation/native';
+import { useFocusEffect } from '@react-navigation/native'; // Hook para executar código quando a tela está em foco.
 import { RootStackParamList } from '../types/navigation';
-import theme from '../styles/theme';
-import Header from '../components/Header';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import theme from '../styles/theme'; // Tema de estilos do app.
+import Header from '../components/Header'; // Componente de cabeçalho.
+import AsyncStorage from '@react-native-async-storage/async-storage'; // API para armazenamento local.
 
+// Define a tipagem para as propriedades de navegação da tela.
 type UserManagementScreenProps = {
   navigation: NativeStackNavigationProp<RootStackParamList, 'UserManagement'>;
 };
 
+// Interface para definir a estrutura de um objeto de usuário.
 interface User {
   id: string;
   name: string;
@@ -22,53 +25,63 @@ interface User {
   role: 'admin' | 'doctor' | 'patient';
 }
 
+// Interface para a tipagem de propriedades em componentes estilizados.
 interface StyledProps {
   role: string;
 }
 
+// Componente funcional que representa a tela de Gerenciamento de Usuários.
 const UserManagementScreen: React.FC = () => {
+  // Extrai o usuário logado do contexto de autenticação.
   const { user } = useAuth();
+  // Hook para obter o objeto de navegação.
   const navigation = useNavigation<UserManagementScreenProps['navigation']>();
+  // Estados para armazenar a lista de usuários e o status de carregamento.
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
 
+  // Função assíncrona para carregar a lista de usuários do AsyncStorage.
   const loadUsers = async () => {
     try {
       const storedUsers = await AsyncStorage.getItem('@MedicalApp:users');
       if (storedUsers) {
         const allUsers: User[] = JSON.parse(storedUsers);
-        // Filtra o usuário atual da lista
+        // Filtra a lista para não exibir o próprio usuário logado.
         const filteredUsers = allUsers.filter(u => u.id !== user?.id);
         setUsers(filteredUsers);
       }
     } catch (error) {
       console.error('Erro ao carregar usuários:', error);
     } finally {
-      setLoading(false);
+      setLoading(false); // Finaliza o estado de carregamento.
     }
   };
 
+  // Função para deletar um usuário da lista no AsyncStorage.
   const handleDeleteUser = async (userId: string) => {
     try {
       const storedUsers = await AsyncStorage.getItem('@MedicalApp:users');
       if (storedUsers) {
         const allUsers: User[] = JSON.parse(storedUsers);
+        // Cria uma nova lista contendo todos os usuários, exceto o que foi deletado.
         const updatedUsers = allUsers.filter(u => u.id !== userId);
+        // Salva a nova lista de volta no AsyncStorage.
         await AsyncStorage.setItem('@MedicalApp:users', JSON.stringify(updatedUsers));
-        loadUsers(); // Recarrega a lista
+        loadUsers(); // Recarrega a lista na tela para refletir a mudança.
       }
     } catch (error) {
       console.error('Erro ao deletar usuário:', error);
     }
   };
 
-  // Carrega os usuários quando a tela estiver em foco
+  // Hook que chama a função `loadUsers` toda vez que a tela entra em foco.
   useFocusEffect(
     React.useCallback(() => {
       loadUsers();
     }, [])
   );
 
+  // Função auxiliar para traduzir a 'role' (perfil) para um texto legível.
   const getRoleText = (role: string) => {
     switch (role) {
       case 'admin':
@@ -82,12 +95,14 @@ const UserManagementScreen: React.FC = () => {
     }
   };
 
+  // Estrutura JSX da tela.
   return (
     <Container>
       <Header />
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <Title>Gerenciar Usuários</Title>
 
+        {/* Botão para adicionar um novo usuário (funcionalidade não implementada). */}
         <Button
           title="Adicionar Novo Usuário"
           onPress={() => {}}
@@ -95,11 +110,13 @@ const UserManagementScreen: React.FC = () => {
           buttonStyle={styles.buttonStyle}
         />
 
+        {/* Renderização condicional: mostra texto de carregamento, lista de usuários ou texto de lista vazia. */}
         {loading ? (
           <LoadingText>Carregando usuários...</LoadingText>
         ) : users.length === 0 ? (
           <EmptyText>Nenhum usuário cadastrado</EmptyText>
         ) : (
+          // Mapeia a lista de usuários para renderizar um card para cada um.
           users.map((user) => (
             <UserCard key={user.id}>
               <ListItem.Content>
@@ -114,10 +131,11 @@ const UserManagementScreen: React.FC = () => {
                     {getRoleText(user.role)}
                   </RoleText>
                 </RoleBadge>
+                {/* Container para os botões de ação (Editar/Excluir). */}
                 <ButtonContainer>
                   <Button
                     title="Editar"
-                    onPress={() => {}}
+                    onPress={() => {}} // Funcionalidade de edição não implementada.
                     containerStyle={styles.actionButton as ViewStyle}
                     buttonStyle={styles.editButton}
                   />
@@ -133,6 +151,7 @@ const UserManagementScreen: React.FC = () => {
           ))
         )}
 
+        {/* Botão para voltar à tela anterior. */}
         <Button
           title="Voltar"
           onPress={() => navigation.goBack()}
@@ -144,6 +163,7 @@ const UserManagementScreen: React.FC = () => {
   );
 };
 
+// Objeto de estilos para componentes que não são styled-components.
 const styles = {
   scrollContent: {
     padding: 20,
@@ -184,6 +204,7 @@ const styles = {
   },
 };
 
+// Componentes estilizados com a biblioteca styled-components.
 const Container = styled.View`
   flex: 1;
   background-color: ${theme.colors.background};
@@ -258,4 +279,5 @@ const ButtonContainer = styled.View`
   margin-top: 8px;
 `;
 
-export default UserManagementScreen; 
+// Exporta o componente UserManagementScreen.
+export default UserManagementScreen;
