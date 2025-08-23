@@ -12,39 +12,31 @@ import { Doctor } from '../types/doctors';
 import { RootStackParamList } from '../types/navigation';
 import { useFocusEffect } from '@react-navigation/native';
 
+// Define a tipagem para as propriedades de navegação da tela Home.
 type HomeScreenProps = {
   navigation: NativeStackNavigationProp<RootStackParamList, 'Home'>;
 };
 
+// Mock de dados dos médicos. Em uma aplicação real, isso viria de uma API.
 const doctors: Doctor[] = [
-  {
-    id: '1',
-    name: 'Dr. João Silva',
-    specialty: 'Cardiologista',
-    image: 'https://mighty.tools/mockmind-api/content/human/91.jpg',
-  },
-  {
-    id: '2',
-    name: 'Dra. Maria Santos',
-    specialty: 'Dermatologista',
-    image: 'https://mighty.tools/mockmind-api/content/human/97.jpg',
-  },
-  {
-    id: '3',
-    name: 'Dr. Pedro Oliveira',
-    specialty: 'Oftalmologista',
-    image: 'https://mighty.tools/mockmind-api/content/human/79.jpg',
-  },
+  { id: '1', name: 'Dr. João Silva', specialty: 'Cardiologista', image: 'https://mighty.tools/mockmind-api/content/human/91.jpg', },
+  { id: '2', name: 'Dra. Maria Santos', specialty: 'Dermatologista', image: 'https://mighty.tools/mockmind-api/content/human/97.jpg', },
+  { id: '3', name: 'Dr. Pedro Oliveira', specialty: 'Oftalmologista', image: 'https://mighty.tools/mockmind-api/content/human/79.jpg', },
 ];
 
-const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
+// Componente funcional principal da tela Home.
+const HomeScreen: React.FC<HomeScreenProps> = ({ navigation } ) => {
+  // Estado para armazenar a lista de consultas.
   const [appointments, setAppointments] = useState<Appointment[]>([]);
+  // Estado para controlar a animação de "puxar para atualizar".
   const [refreshing, setRefreshing] = useState(false);
 
+  // Função para carregar as consultas do armazenamento local (AsyncStorage).
   const loadAppointments = async () => {
     try {
       const storedAppointments = await AsyncStorage.getItem('appointments');
       if (storedAppointments) {
+        // Se houver consultas salvas, atualiza o estado.
         setAppointments(JSON.parse(storedAppointments));
       }
     } catch (error) {
@@ -52,36 +44,44 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
     }
   };
 
+  // Hook do React Navigation que executa uma função sempre que a tela está em foco.
   useFocusEffect(
     React.useCallback(() => {
+      // Chama a função para carregar as consultas.
       loadAppointments();
     }, [])
   );
 
+  // Função executada quando o usuário "puxa para atualizar" a lista.
   const onRefresh = async () => {
-    setRefreshing(true);
-    await loadAppointments();
-    setRefreshing(false);
+    setRefreshing(true); // Inicia a animação de refresh.
+    await loadAppointments(); // Recarrega os dados.
+    setRefreshing(false); // Para a animação de refresh.
   };
 
+  // Função para buscar as informações de um médico pelo seu ID.
   const getDoctorInfo = (doctorId: string): Doctor | undefined => {
     return doctors.find(doctor => doctor.id === doctorId);
   };
 
+  // Função que renderiza cada item da lista de consultas (FlatList).
   const renderAppointment = ({ item }: { item: Appointment }) => {
+    // Busca as informações do médico associado à consulta.
     const doctor = getDoctorInfo(item.doctorId);
-    
     return (
+      // Este é o card que representa uma consulta na interface.
       <AppointmentCard>
         <DoctorImage source={{ uri: doctor?.image || 'https://via.placeholder.com/100' }} />
         <InfoContainer>
           <DoctorName>{doctor?.name || 'Médico não encontrado'}</DoctorName>
           <DoctorSpecialty>{doctor?.specialty || 'Especialidade não encontrada'}</DoctorSpecialty>
-          <DateTime>{new Date(item.date).toLocaleDateString()} - {item.time}</DateTime>
+          <DateTime>{new Date(item.date ).toLocaleDateString()} - {item.time}</DateTime>
           <Description>{item.description}</Description>
+          {/* O status da consulta (Pendente/Confirmado) é exibido aqui. */}
           <Status status={item.status}>
             {item.status === 'pending' ? 'Pendente' : 'Confirmado'}
           </Status>
+          {/* Botões de ação para editar e excluir a consulta. */}
           <ActionButtons>
             <ActionButton>
               <Icon name="edit" type="material" size={20} color={theme.colors.primary} />
@@ -95,39 +95,31 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
     );
   };
 
+  // Retorna a estrutura JSX que compõe a tela.
   return (
     <Container>
+      {/* Componente de cabeçalho da tela. */}
       <HeaderContainer>
         <HeaderTitle>Minhas Consultas</HeaderTitle>
       </HeaderContainer>
-
       <Content>
+        {/* Botão que leva o usuário para a tela de agendar uma nova consulta. */}
         <Button
           title="Agendar Nova Consulta"
-          icon={
-            <FontAwesome
-              name="calendar-plus-o"
-              size={20}
-              color="white"
-              style={{ marginRight: 8 }}
-            />
-          }
-          buttonStyle={{
-            backgroundColor: theme.colors.primary,
-            borderRadius: 8,
-            padding: 12,
-            marginBottom: theme.spacing.medium
-          }}
+          icon={<FontAwesome name="calendar-plus-o" size={20} color="white" style={{ marginRight: 8 }} />}
+          buttonStyle={{ backgroundColor: theme.colors.primary, borderRadius: 8, padding: 12, marginBottom: theme.spacing.medium }}
           onPress={() => navigation.navigate('CreateAppointment')}
         />
-
+        {/* Componente FlatList para exibir a lista de consultas de forma otimizada. */}
         <AppointmentList
           data={appointments}
           keyExtractor={(item: Appointment) => item.id}
           renderItem={renderAppointment}
+          // Habilita a funcionalidade "puxar para atualizar".
           refreshControl={
             <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
           }
+          // Exibe uma mensagem quando a lista de consultas está vazia.
           ListEmptyComponent={
             <EmptyText>Nenhuma consulta agendada</EmptyText>
           }
@@ -136,6 +128,8 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
     </Container>
   );
 };
+
+// A seguir, temos os componentes estilizados com styled-components, que definem a aparência da interface.
 
 const Container = styled.View`
   flex: 1;
@@ -227,4 +221,5 @@ const EmptyText = styled.Text`
   margin-top: ${theme.spacing.large}px;
 `;
 
+// Exporta o componente HomeScreen para que ele possa ser usado no sistema de navegação do app.
 export default HomeScreen;
