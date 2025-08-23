@@ -1,22 +1,28 @@
+// Importações de bibliotecas e componentes necessários.
 import React from 'react';
 import styled from 'styled-components/native';
 import { Button, ListItem } from 'react-native-elements';
-import { useAuth } from '../contexts/AuthContext';
+import { useAuth } from '../contexts/AuthContext'; // Hook para acessar dados de usuário e função de logout.
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../types/navigation';
-import theme from '../styles/theme';
-import Header from '../components/Header';
+import theme from '../styles/theme'; // Tema de cores e estilos do app.
+import Header from '../components/Header'; // Componente de cabeçalho.
 import { ViewStyle } from 'react-native';
 
+// Define a tipagem para as propriedades de navegação da tela de Perfil.
 type ProfileScreenProps = {
   navigation: NativeStackNavigationProp<RootStackParamList, 'Profile'>;
 };
 
+// Componente funcional que representa a tela de Perfil do usuário.
 const ProfileScreen: React.FC = () => {
+  // Extrai os dados do usuário (user) e a função de logout (signOut) do contexto de autenticação.
   const { user, signOut } = useAuth();
+  // Hook para obter o objeto de navegação.
   const navigation = useNavigation<ProfileScreenProps['navigation']>();
 
+  // Função auxiliar para traduzir o tipo de perfil (role) para um texto legível.
   const getRoleText = (role: string) => {
     switch (role) {
       case 'admin':
@@ -30,25 +36,30 @@ const ProfileScreen: React.FC = () => {
     }
   };
 
+  // Estrutura JSX da tela de perfil.
   return (
     <Container>
       <Header />
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <Title>Meu Perfil</Title>
 
+        {/* Card principal com as informações do usuário. */}
         <ProfileCard>
           <Avatar source={{ uri: user?.image || 'https://via.placeholder.com/150' }} />
           <Name>{user?.name}</Name>
           <Email>{user?.email}</Email>
+          {/* Badge que exibe o tipo de perfil do usuário. */}
           <RoleBadge role={user?.role || ''}>
-            <RoleText>{getRoleText(user?.role || '')}</RoleText>
+            <RoleText>{getRoleText(user?.role || '' )}</RoleText>
           </RoleBadge>
           
+          {/* Exibe a especialidade apenas se o usuário for um médico. */}
           {user?.role === 'doctor' && (
             <SpecialtyText>Especialidade: {user?.specialty}</SpecialtyText>
           )}
         </ProfileCard>
 
+        {/* Botão para navegar para a tela de edição de perfil. */}
         <Button
           title="Editar Perfil"
           onPress={() => navigation.navigate('EditProfile' as any)}
@@ -56,6 +67,7 @@ const ProfileScreen: React.FC = () => {
           buttonStyle={styles.editButton}
         />
 
+        {/* Botão para voltar para a tela anterior na pilha de navegação. */}
         <Button
           title="Voltar"
           onPress={() => navigation.goBack()}
@@ -63,6 +75,7 @@ const ProfileScreen: React.FC = () => {
           buttonStyle={styles.buttonStyle}
         />
 
+        {/* Botão para executar a função de logout. */}
         <Button
           title="Sair"
           onPress={signOut}
@@ -74,6 +87,7 @@ const ProfileScreen: React.FC = () => {
   );
 };
 
+// Objeto de estilos para componentes que não são styled-components.
 const styles = {
   scrollContent: {
     padding: 20,
@@ -96,6 +110,7 @@ const styles = {
   },
 };
 
+// Componentes estilizados com a biblioteca styled-components.
 const Container = styled.View`
   flex: 1;
   background-color: ${theme.colors.background};
@@ -143,11 +158,12 @@ const Email = styled.Text`
   margin-bottom: 8px;
 `;
 
+// O estilo do Badge muda de cor com base no tipo de perfil (role) do usuário.
 const RoleBadge = styled.View<{ role: string }>`
   background-color: ${(props: { role: string }) => {
     switch (props.role) {
       case 'admin':
-        return theme.colors.primary + '20';
+        return theme.colors.primary + '20'; // Adiciona transparência à cor.
       case 'doctor':
         return theme.colors.success + '20';
       default:
@@ -171,4 +187,5 @@ const SpecialtyText = styled.Text`
   margin-top: 8px;
 `;
 
+// Exporta o componente ProfileScreen.
 export default ProfileScreen;
